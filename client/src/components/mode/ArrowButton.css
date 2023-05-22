@@ -1,0 +1,18 @@
+.button_grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* gap: 5px; */
+}
+
+button{
+    height: 60px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(0, 26, 51, 0.95);
+}
+
+.arrow-up, .arrow-down {
+    grid-column: span 2;
+    /* background-color: blue; */
+}
+

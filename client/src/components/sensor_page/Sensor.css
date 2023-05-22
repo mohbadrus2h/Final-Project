@@ -1,0 +1,214 @@
+  .background-image {
+    /* background-image: url(/background.jpg); */
+    background-color: grey;
+    background-size: contain;
+    width: 100%;
+    height: 100vh;
+  }
+  
+  .grid-container {
+    display: grid;
+    grid-template-columns: 75% 25%;
+    grid-template-rows: 75% 25%;
+    font-size: 25px;
+    height: 100vh;
+    width: 100vw;
+    /* height: 480px;
+    width: 800px; */
+    padding: 10px;
+    /* border: 5px solid #001a33; */
+  }
+  
+  .grid-item-1 {
+    grid-column-start: 1;
+    grid-column-end: 2;  
+    background-color: #6685a3;
+  }
+  
+  .grid-item-2 {
+    display: grid;
+    grid-column-start: 2;
+    grid-column-end: 3;
+    /* grid-row: 1/-1; */
+    grid-row: 1;
+    grid-template-rows: 1fr 4fr 6fr;
+    grid-gap: 10px;
+    /* background-color:#001a33; */
+    padding: 0px 0px 0px 5px;
+  }
+  
+  .form-select {
+    background-color: rgba(0, 26, 51, 0.95);
+    color: white;
+    font-size: 0.9em;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(0, 26, 51, 0.95);
+  }
+  
+  .form-select:active {
+    background-color: rgba(0, 26, 51, 0.95);
+  }
+  
+  .grid-item-3 {
+    display: grid;
+    grid-column-start: 1;
+    /* grid-column-end: 2; */
+    grid-column-end: 3;
+    grid-row: 2/-1;
+    /* grid-template-columns: 0.17fr 0.3fr 0.27fr 0.27fr; */
+    /* grid-template-rows: 3fr 3fr 3fr 3fr; */
+    grid-template-columns: 1fr 1.5fr 1.5fr 3fr ;
+    grid-template-rows: 3fr 3fr 3fr 3fr;
+    grid-gap: 10px;
+    /* background-color: #001a33; */
+    padding: 5px 0px 0px 0px;
+  }
+  
+  .gridChild-item-bot {
+    position: relative;
+    display: grid;
+    /* font-size: 0.5em;   */
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 0.3fr 0.7fr;
+    /* font-size: 15px; */
+    color: white;
+    font-weight: 600;
+    /* background-color:  rgba(242, 242, 242, 0.08); */
+    background-color: rgba(0, 26, 51, 0.95);
+    /* border-radius: 5px; */
+  }
+  
+  .gridChild-item-Side {
+    position: relative;
+    display: grid; 
+    grid-template-columns: 4fr 6fr;
+    margin: none;
+    font-size: 0.9em;
+    color: white;
+    font-weight: 600;
+    /* background-color:  rgba(242, 242, 242, 0.08); */
+    background-color: rgba(0, 26, 51, 0.95);
+    
+  }
+  
+  .gridChild-item-1{
+    grid-column: 1/-1;
+    grid-row: 1/2;
+    font-weight: bolder;
+    margin: auto;
+    text-align: center;
+    justify-content: center;
+    color: rgb(255, 255, 0);
+    /* border-radius: 5px; */
+  }
+  
+  .gridchild-title {
+    font-size: 0.9em;
+    /* border-radius: 2px solid #6685a3; */
+  }
+  
+  .item-bot-col1 {
+    grid-column: 1/2;
+    grid-row: 2/3;
+    font-size: 0.6em;
+    margin: auto;
+    text-align: center;
+  }
+  
+  .item-bot-col2 {
+    grid-column: 2/3;
+    font-size: 0.6em;
+    margin: auto;
+    text-align: center;
+  }
+  
+  
+  p {
+    margin: 6px;
+  }
+  
+  .item-side-col1{
+    grid-column: 1/2;
+    font-size: 0.75em;
+  }
+  
+  .item-side-col2 p{
+    grid-column: 2/3;
+    font-size: 0.75em;
+    text-align: center;
+  }
+  
+  .val-color {
+    color: rgb(0, 230, 230);
+  }
+  
+  /* @import url('https://fonts.googleapis.com/css?family=Raleway'); */
+  
+  * {
+      font-family: Raleway;
+  }
+  
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  @media screen and (max-width: 800px), (max-height: 480px){
+  
+    .background-image {
+      background-size: contain;
+      width: 100%;
+      height: 100vh;
+    }
+  
+    .grid-container {
+      padding: 5px;
+      /* border: 5px solid #001a33; */
+    }
+  
+    .gridchild-title {
+      font-size: 0.1em;
+      /* border-radius: 2px solid #6685a3; */
+    }
+    
+    .item-bot-col1 {
+      font-size: 0.7em;
+    }
+
+    .item-bot-col2 {
+      font-size: 0.5em;
+    }
+    
+    p {
+      margin: 4px;
+    }
+    
+    .item-side-col1{
+      font-size: 0.5em;
+    }
+    
+    .item-side-col2 p{
+      font-size: 0.4em;
+    }
+  }
+  
+  .map-wrap {
+    position: relative;
+    width: 100%;
+    height: 73vh;
+    /* height: calc(100vh - 77px); calculate height of the screen minus the heading */
+  }
+  
+  .map {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .watermark {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 999;
+  }
