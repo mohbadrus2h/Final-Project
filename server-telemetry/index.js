@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000"
+    origin: "*"
   }
 
 })
@@ -28,10 +28,17 @@ const io = new Server(server, {
 const pool = new Pool({
   user: "postgres",
   host: "localhost",
-  database: "data_gps",
+  database: "gpslogger",
   password: "user",
   port: 5432,
 })
+
+pool.connect()
+  .then(() => {
+    console.log('Connected to the database');
+  })
+  .catch(error => console.error('Error connecting to the database:', error));
+
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
@@ -62,14 +69,14 @@ io.on('connect', (socket) => {
 
   })
 
-
   socket.on('gps', (data) => {
 
     buffer.push(data);
 
     if (buffer.length >= bufferSize) {
       
-      console.log(buffer)
+      // console.log(filteredData);
+      // saveBufferToDatabase(buffer)
       io.emit('buffer', buffer)
 
       buffer = []
@@ -97,7 +104,7 @@ io.on('connect', (socket) => {
   });
 
   socket.on('fetchData', (date) => {
-    pool.query(`SELECT * FROM value WHERE date = '${date}'`, (err, result) => {
+    pool.query(`SELECT * FROM gpstab WHERE date = '${date}'`, (err, result) => {
       
       if (err) {
         console.error('Error', err.stack);
@@ -111,7 +118,7 @@ io.on('connect', (socket) => {
 
   socket.on("downloadData", async (date) => {
     const result = await pool.query(
-      "SELECT * FROM value WHERE date = $1",
+      "SELECT * FROM gpstab WHERE date = $1",
       [date],
     );
     const data = result.rows;
@@ -140,6 +147,19 @@ function convertToCSV(data) {
   return csvRows.join("\n");
 }
 
-server.listen(4000, () => {
+function saveBufferToDatabase(buffer) {
+ 
+  const query = 'INSERT INTO gpstab (date, latitude, longitude, altitude) VALUES ($1, $2, $3, $4)';
+
+  buffer.forEach(row => {
+    const dataToInsert = row.slice(0, -1);
+
+    pool.query(query, dataToInsert)
+      .then(() => console.log('Data inserted successfully'))
+      .catch(error => console.error('Error inserting data:', error));
+  });
+}
+
+server.listen(4000, "0.0.0.0", () => {
   console.log('listening on *:4000');
 }); 

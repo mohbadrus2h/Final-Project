@@ -11,16 +11,14 @@ import Database from './components/database_page/Database';
 
 import './App.css';
 
-const socket = io.connect("http://localhost:4000");
+const socket = io.connect("http://192.168.100.10:4000");
 
 function App() {
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* <Route path="/main" /> */}
-        <Route path="/map" element={<Map/>}/>
-        <Route path="/main" element={<Sensor socket={socket} />} />
+        <Route path="/" element={<Sensor socket={socket} />} />
         <Route path="/mode" element={<Mode socket={socket} />} />
         <Route path='/search-data' element={<Database socket={socket} />} />
       </Routes>

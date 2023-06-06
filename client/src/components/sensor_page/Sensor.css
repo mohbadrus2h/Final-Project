@@ -59,7 +59,8 @@
     grid-row: 2/-1;
     /* grid-template-columns: 0.17fr 0.3fr 0.27fr 0.27fr; */
     /* grid-template-rows: 3fr 3fr 3fr 3fr; */
-    grid-template-columns: 1fr 1.5fr 1.5fr 3fr ;
+    /* grid-template-columns: 1fr 1.5fr 1.5fr 3fr ; */
+    grid-template-columns: 1fr 1fr 1fr 1fr ;
     grid-template-rows: 3fr 3fr 3fr 3fr;
     grid-gap: 10px;
     /* background-color: #001a33; */

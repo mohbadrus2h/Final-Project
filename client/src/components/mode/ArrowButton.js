@@ -7,7 +7,7 @@ const ArrowButton = ({ socket, selectedMode, isConnected }) => {
   const [leftArrowValue, setLeftArrowValue] = useState(0);
   const [elevValue, setElevValue] = useState(0);
 
-//   console.log(isConnected)
+  // console.log(isConnected)
 
   const handleUpArrowClick = () => {
     if (elevValue >= 0) {

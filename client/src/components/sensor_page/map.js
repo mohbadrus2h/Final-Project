@@ -16,7 +16,7 @@ const Map = ({ buffer }) => {
     const latLngs = buffer.map(point => [point[1], point[2]]);
     const color = buffer[0][4];
 
-    console.log(color)
+    // console.log(color)
 
     const polylineOptions = {
       color: color,

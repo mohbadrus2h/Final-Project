@@ -10,7 +10,21 @@ const DropdownList = ({ socket, onModeChange }) => {
   const handleModeChange = (event) => {
     const selectedMode = event.target.value;
     setSelected(selectedMode);
-    onModeChange(selectedMode);
+
+    if (selectedMode === 'manual') {
+      activateArrowButtons();
+    } else {
+      disableArrowButtons();
+    }
+  };
+
+  const activateArrowButtons = () => {
+    setClickState(true);
+    setReconnectState(false);
+  };
+
+  const disableArrowButtons = () => {
+    setClickState(false);
   };
 
   const handleConnectClick = () => {
@@ -18,10 +32,14 @@ const DropdownList = ({ socket, onModeChange }) => {
       if (clickState && !reconnectState) {
         socket.emit('selection', 'disconnected');
         setClickState(false);
+        disableArrowButtons();
       } else {
         socket.emit('selection', selected);
         setClickState(true);
         setReconnectState(false);
+        if (selected === 'manual') {
+          activateArrowButtons();
+        }
       }
     }
   };

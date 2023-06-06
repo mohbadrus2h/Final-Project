@@ -1,11 +1,14 @@
 from KalmanFilter3D import KalmanFilter3D
+from pymavlink import mavutil
 import numpy as np
 import socketio
-import folium
+import math
 import csv
 import datetime
 import time
 import sys
+
+# master = mavutil.mavlink_connection('COM6', baud=57600)
 
 sio = socketio.Client()
 sio.connect('http://localhost:4000')
@@ -33,8 +36,10 @@ def disconnect():
 
 init_lat = 0
 init_lon = 0
+init_alt = 0
 curr_lat = 0
 curr_lon = 0
+curr_alt = 0
 
 file_input = 'editlogger.csv'
 coords = []
@@ -56,13 +61,50 @@ with open(file_input, 'r') as gps_file:
 
 def gps_data():
 
+    # msg = master.recv_match(type='GPS_RAW_INT', blocking=True)
+
+    # gps_lat = msg.lat * 1e-7
+    # gps_lon = msg.lon * 1e-7
+    # gps_alt = msg.alt / 1e-3
+
+    # return [gps_lat, gps_lon, gps_alt]
+
     global g
 
     gps_msg = coords[g]
     g += 1
     if g >= len(coords):
         g = 1
+
     return gps_msg
+
+def velocity(prev_lat, prev_lon, prev_alt, curr_lat, curr_lon, curr_alt):
+   
+    time_diff = 1
+
+    R = 6378.137
+    
+    dlat = math.radians(curr_lat - prev_lat)
+    dlon = math.radians(curr_lon - prev_lon)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.sin(dlon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c * 1000
+    azimuth_deg = math.degrees(math.atan2(math.sin(dlon) * math.cos(math.radians(curr_lat)), math.cos(math.radians(prev_lat)) * math.sin(math.radians(curr_lat)) - math.sin(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.cos(dlon)))
+    elev_deg = math.degrees(math.atan2(curr_alt - prev_alt, distance))
+
+    # vx = distance / time_diff * math.cos(azimuth_deg)
+    # vy = distance / time_diff * math.sin(azimuth_deg)
+    # vz = (curr_alt - prev_alt) / time_diff
+
+    # prev_lat = curr_lat
+    # prev_lon = curr_lon
+    # prev_alt = curr_alt
+
+    if azimuth_deg < 0 or elev_deg:
+        azimuth_deg = 360 + azimuth_deg
+        elev_deg = 0
+
+    return [azimuth_deg, elev_deg]
 
 def timefunc():
 
@@ -115,6 +157,14 @@ def start_automatic_process():
         global k
         global prev_predict
 
+        global init_lat
+        global init_lon
+        global init_alt
+
+        global curr_lat
+        global curr_lon
+        global curr_alt
+
         t = datetime.datetime.now()
         date = str(t.year) + '-' + str(t.month) + '-' + str(t.day)
 
@@ -140,18 +190,6 @@ def start_automatic_process():
 
         else:
 
-
-        # if gps_lat != 0 and gps_lon != 0 and gps_alt != 0:
-
-
-            # if j == True:
-            #     init_lat = gps_lat
-            #     init_lon = gps_lon
-            #     init_alt = gps_alt
-
-            #     j = False
-
-            # else:
             curr_lat = gps_lat
             curr_lon = gps_lon
             curr_alt = gps_alt
@@ -164,9 +202,7 @@ def start_automatic_process():
 
                 pack_est_pos = [date, curr_lat, curr_lon, curr_alt, "red"]
 
-                # pack_est_pos = [date] + prev_predict + ["red"]
-
-                print(pack_est_pos)
+                # print(pack_est_pos)
                 sio.emit('gps', pack_est_pos)
 
             else:
@@ -184,19 +220,19 @@ def start_automatic_process():
                 est_pos = est_pos.reshape((1,3)).flatten().tolist()
 
                 pack_gps = [date, curr_lat, curr_lon, curr_alt, 'blue']
-
-                # if k:
-
-                #     k = False
-
-                # else:
-
-                print(pack_gps)
+    
+                # print(pack_gps)
                 sio.emit('gps', pack_gps)
                 
                 prev_predict = est_pos
             
-        # else:
+        angle = velocity(init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt)    
+        azi_thet = round(angle[0], 2)
+        elev_thet = round(angle[1], 2)
+
+        pack_thet = [azi_thet, elev_thet]
+
+        print(pack_thet)
 
         time.sleep(1)
     
