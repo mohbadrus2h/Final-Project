@@ -45,7 +45,8 @@ app.get('/', (req, res) => {
 });
 
 const bufferSize = 10;
-let buffer = [];
+let gps_buffer = [];
+let est_buffer = [];
 
 io.on('connect', (socket) => {
 
@@ -64,24 +65,44 @@ io.on('connect', (socket) => {
 
   socket.on('init_pos', (initpos) => {
     
-    console.log(initpos)
+    // console.log(initpos)
     io.emit('init_pos', initpos)
 
   })
 
   socket.on('gps', (data) => {
 
-    buffer.push(data);
+    gps_buffer.push(data);
 
-    if (buffer.length >= bufferSize) {
+    if (gps_buffer.length >= bufferSize) {
       
-      // console.log(filteredData);
+      console.log(gps_buffer);
       // saveBufferToDatabase(buffer)
-      io.emit('buffer', buffer)
+      io.emit('gps', gps_buffer)
 
-      buffer = []
+      gps_buffer = []
     }
   });
+
+  socket.on('gps_est', (data) => {
+
+    est_buffer.push(data);
+
+    if (est_buffer.length >= bufferSize) {
+      
+      console.log(est_buffer);
+      // saveBufferToDatabase(buffer)
+      io.emit('gps_est', est_buffer)
+
+      est_buffer = []
+    }
+  });
+
+  socket.on('acs', (acs_data) => {
+
+    console.log(acs_data)
+    io.emit('acs', acs_data)
+  })
 
   socket.on('arrowData', (arrow_Data) => { 
     io.emit('arrowData', arrow_Data)

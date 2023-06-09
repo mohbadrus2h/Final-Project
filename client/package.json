@@ -49,5 +49,9 @@
   },
   "devDependencies": {
     "@types/bootstrap": "^5.2.6"
-  }
+  },
+  "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC"
 }

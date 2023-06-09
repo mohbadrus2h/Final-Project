@@ -1,7 +1,10 @@
 from KalmanFilter3D import KalmanFilter3D
 from pymavlink import mavutil
+from serial import Serial
 import numpy as np
 import socketio
+import serial
+import struct
 import math
 import csv
 import datetime
@@ -9,6 +12,8 @@ import time
 import sys
 
 # master = mavutil.mavlink_connection('COM6', baud=57600)
+
+# ser = serial.Serial('/dev/ttyUSB0', 57600)
 
 sio = socketio.Client()
 sio.connect('http://localhost:4000')
@@ -106,15 +111,17 @@ def velocity(prev_lat, prev_lon, prev_alt, curr_lat, curr_lon, curr_alt):
 
     return [azimuth_deg, elev_deg]
 
-def timefunc():
+# def acsData(serial_port, array_size):
 
-    global g
+#     while ser.in_waiting < array_size * 2:
+#         pass
 
-    time_msg = coord_time[g]
-    g += 1
-    if g >= len(coord_time):
-        g = 1
-    return time_msg
+#     array_data = ser.read(array_size * 2)
+#     acs_array = struct.unpack('f' * array_size, array_data)
+
+    # ser.close()
+
+    # return acs_array
 
 g = 0
 i = True
@@ -136,18 +143,38 @@ def selection(data):
     global automatic_process_running
 
     if data == 'manual':
-        execute = False
-        # automatic_process_running = False
-    # elif data == 'automatic' and not automatic_process_running:
+        execute = True
+
+        @sio.event
+        def arrowData(arrow_Data):
+
+            print(arrow_Data)
+
+            # send_data("automatic", [arrow_Data[0], arrow_Data[1]])
+
     elif data == 'automatic':
         execute = True
-        send_data = True
-        start_automatic_process()
+        # send_data = True
+        start_automatic_process()   
+
     elif data == 'disconnected':
         execute = False
         # sio.disconnect()
         # sys.exit(0)
 
+def send_data(mode, data):
+
+    mode_byte = 0 if mode == "manual" else 1
+
+    if mode == "manual":
+        data_bytes = struct.pack('2f', *data)
+
+    elif mode == "automatic":
+        
+        data_bytes = struct.pack('2f', *data)
+
+    # ser.write(bytes([mode_byte]) + data_bytes)
+    # ser.flush()
 
 def start_automatic_process():
 
@@ -164,6 +191,8 @@ def start_automatic_process():
         global curr_lat
         global curr_lon
         global curr_alt
+
+        global init_pos
 
         t = datetime.datetime.now()
         date = str(t.year) + '-' + str(t.month) + '-' + str(t.day)
@@ -182,9 +211,9 @@ def start_automatic_process():
                 init_alt = gps_alt
 
                 init_pos = [init_lat, init_lon, init_alt]
-                print(init_pos)
+                # print(init_pos)
 
-                sio.emit('init_pos', init_pos)
+                # sio.emit('init_pos', init_pos)
 
                 i = False
 
@@ -194,45 +223,94 @@ def start_automatic_process():
             curr_lon = gps_lon
             curr_alt = gps_alt
 
+
             if curr_lat == 0 or curr_lon == 0 or curr_alt == 0:
 
-                curr_lat = round(prev_predict[0], 8)
-                curr_lon = round(prev_predict[1], 8)
-                curr_alt = round(prev_predict[2], 1)
+                # curr_lat = round(prev_predict[0], 8)
+                # curr_lon = round(prev_predict[1], 8)
+                # curr_alt = round(prev_predict[2], 1)
 
-                pack_est_pos = [date, curr_lat, curr_lon, curr_alt, "red"]
+                # pack_est_pos = [date, curr_lat, curr_lon, curr_alt, 'red']
 
                 # print(pack_est_pos)
-                sio.emit('gps', pack_est_pos)
+                # sio.emit('gps', pack_est_pos)
 
+                prev_predict_list = []
+
+                if prev_predict_list:
+
+                    curr_lat = round(prev_predict_list[0][0], 8)
+                    curr_lon = round(prev_predict_list[0][1], 8)
+                    curr_alt = round(prev_predict_list[0][2], 1)
+
+            
             else:
 
                 kf.z = np.array([curr_lat, curr_lon, curr_alt])
 
                 kf.update(kf.z)
 
-                est_state = kf.predict()
+                # est_state = kf.predict()
+                
+                prev_predict_list = []
 
-                est_state = est_state[:6].reshape((6, 1))
+                for _ in range(10):
+                    
+                    est_state = kf.predict()
+                    est_state = est_state[:6].reshape((6, 1))
 
-                est_pos = kf.H.dot(est_state)
+                    est_pos = kf.H.dot(est_state)
+                    est_pos = est_pos.reshape((1, 3)).flatten().tolist()
 
-                est_pos = est_pos.reshape((1,3)).flatten().tolist()
+                    # prev_predict = est_pos
 
-                pack_gps = [date, curr_lat, curr_lon, curr_alt, 'blue']
+                    prev_predict_list.append(est_pos)
+
+                    # print([prev_predict, prev_predict])
+
+                # print([prev_predict[0], prev_predict[1]])
+                # est_pos = kf.H.dot(est_state)
+
+                # est_pos = est_pos.reshape((1,3)).flatten().tolist()
+
+                # pack_gps = [date, curr_lat, curr_lon, curr_alt, 'blue']
+    
+                # # print(pack_gps)
+                # sio.emit('gps', pack_gps)
     
                 # print(pack_gps)
-                sio.emit('gps', pack_gps)
+
+                if prev_predict_list:
+                    last_predicted_pos = prev_predict_list[-1]
+                    sio.emit('gps_est', [date, last_predicted_pos[0], last_predicted_pos[1], last_predicted_pos[2], 'red'])
                 
-                prev_predict = est_pos
+            sio.emit('gps', [date, gps_lat, gps_lon, gps_alt, 'blue'])
+            # sio.emit('gps_est', [date, prev_predict[0], prev_predict[1], prev_predict[2], 'red'])
+
+            sio.emit('init_pos', init_pos)
+
             
-        angle = velocity(init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt)    
-        azi_thet = round(angle[0], 2)
-        elev_thet = round(angle[1], 2)
+            # real_gps = [date, gps_lat, gps_lon, gps_alt, 'blue']
+            # sio.emit('gps', real_gps)
+            
+        # angle = velocity(init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt)    
+        # azi_thet = round(angle[0], 2)
+        # elev_thet = round(angle[1], 2)
 
-        pack_thet = [azi_thet, elev_thet]
+        # pack_thet = [azi_thet, elev_thet]
 
-        print(pack_thet)
+        # print(pack_thet)
+
+        # data = acsData('/dev/ttyACM0', 3)
+        # acs_1 = round(data[0], 3)
+        # acs_2 = round(data[1], 3)
+        # acs_3 = round(data[2], 3)
+
+        # acs_data = [acs_1, acs_2, acs_3]
+
+        # sio.emit('acs', acs_data)
+        
+        # print(acs_data)
 
         time.sleep(1)
     
