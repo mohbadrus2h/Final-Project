@@ -10,13 +10,41 @@ import csv
 import datetime
 import time
 import sys
+import os
 
-# master = mavutil.mavlink_connection('COM6', baud=57600)
+ser = None
 
-# ser = serial.Serial('/dev/ttyUSB0', 57600)
+master = mavutil.mavlink_connection('/dev/ttyUSB1', baud=57600)
+
+# def connectDevice(port):
+#     baudrate = 57600
+#     timeout = 1
+
+#     ser = serial.Serial(port, baudrate, timeout=timeout)
+
+#     return ser
+
+# def scanDevice():
+#     ports = list(serial.tools.list_ports.comports())
+#     for port in ports:
+#         try:
+#             ser = connectDevice(port.device)
+#             print('USB device connected:', port.device)
+#             return ser
+        
+#         except serial.SerialException:
+#             pass
+
+#     return None
+
+try:
+    ser = serial.Serial('/dev/ttyUSB0', 57600)
+    
+except serial.SerialException:
+    print("Error: The specified USB port is not available.")
 
 sio = socketio.Client()
-sio.connect('http://localhost:4000')
+sio.connect('http://192.168.100.10:4000')
 
 kf = KalmanFilter3D()
 
@@ -38,6 +66,9 @@ def disconnect():
     connected = False
     print('Disconnected from server')
     sys.exit(0)
+
+t = datetime.datetime.now()
+date = str(t.year) + '-' + str(t.month) + '-' + str(t.day)
 
 init_lat = 0
 init_lon = 0
@@ -66,50 +97,88 @@ with open(file_input, 'r') as gps_file:
 
 def gps_data():
 
-    # msg = master.recv_match(type='GPS_RAW_INT', blocking=True)
+    msg = master.recv_match(type='GPS_RAW_INT', blocking=True)
 
-    # gps_lat = msg.lat * 1e-7
-    # gps_lon = msg.lon * 1e-7
-    # gps_alt = msg.alt / 1e-3
+    gps_lat = msg.lat * 1e-7
+    gps_lon = msg.lon * 1e-7
+    gps_alt = msg.alt * 1e-3
 
-    # return [gps_lat, gps_lon, gps_alt]
+    return [gps_lat, gps_lon, gps_alt]
 
-    global g
+    # global g
 
-    gps_msg = coords[g]
-    g += 1
-    if g >= len(coords):
-        g = 1
+    # gps_msg = coords[g]
+    # g += 1
+    # if g >= len(coords):
+    #     g = 1
 
-    return gps_msg
+    # return gps_msg
 
-def velocity(prev_lat, prev_lon, prev_alt, curr_lat, curr_lon, curr_alt):
+def attitude():
+
+    att_msg = master.recv_match(type='ATTITUDE', blocking=True)
+
+    pitch_deg = math.degrees(att_msg.pitch)
+    yaw_deg = math.degrees(att_msg.yaw)
+
+    if yaw_deg < 0:
+        yaw_deg = 360 + yaw_deg
+
+    if pitch_deg < 0:
+        pitch_deg = 0;
+
+    return [pitch_deg, yaw_deg]
+
+# def velocity(prev_lat, prev_lon, prev_alt, curr_lat, curr_lon, curr_alt):
    
-    time_diff = 1
+#     time_diff = 1
 
-    R = 6378.137
+#     R = 6378.137
     
-    dlat = math.radians(curr_lat - prev_lat)
-    dlon = math.radians(curr_lon - prev_lon)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.sin(dlon / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    distance = R * c * 1000
-    azimuth_deg = math.degrees(math.atan2(math.sin(dlon) * math.cos(math.radians(curr_lat)), math.cos(math.radians(prev_lat)) * math.sin(math.radians(curr_lat)) - math.sin(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.cos(dlon)))
-    elev_deg = math.degrees(math.atan2(curr_alt - prev_alt, distance))
+#     dlat = math.radians(curr_lat - prev_lat)
+#     dlon = math.radians(curr_lon - prev_lon)
+#     a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.sin(dlon / 2) ** 2
+#     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+#     distance = R * c * 1000
+#     azimuth_deg = math.degrees(math.atan2(math.sin(dlon) * math.cos(math.radians(curr_lat)), math.cos(math.radians(prev_lat)) * math.sin(math.radians(curr_lat)) - math.sin(math.radians(prev_lat)) * math.cos(math.radians(curr_lat)) * math.cos(dlon)))
+#     elev_deg = math.degrees(math.atan2(curr_alt - prev_alt, distance))
 
-    # vx = distance / time_diff * math.cos(azimuth_deg)
-    # vy = distance / time_diff * math.sin(azimuth_deg)
-    # vz = (curr_alt - prev_alt) / time_diff
+#     # vx = distance / time_diff * math.cos(azimuth_deg)
+#     # vy = distance / time_diff * math.sin(azimuth_deg)
+#     # vz = (curr_alt - prev_alt) / time_diff
 
-    # prev_lat = curr_lat
-    # prev_lon = curr_lon
-    # prev_alt = curr_alt
+#     # prev_lat = curr_lat
+#     # prev_lon = curr_lon
+#     # prev_alt = curr_alt
 
-    if azimuth_deg < 0 or elev_deg:
-        azimuth_deg = 360 + azimuth_deg
-        elev_deg = 0
+#     # if azimuth_deg < 0 or elev_deg:
+#     #     azimuth_deg = 360 + azimuth_deg
+#     #     elev_deg = 0
 
-    return [azimuth_deg, elev_deg]
+#     return [azimuth_deg, elev_deg]
+
+header = ['init_lat', 'init_lon', 'init_alt', 'curr_lat', 'curr_lon', 'curr_alt', 'azi_thet', 'elev_thet', 'yaw', 'pitch']
+
+def csv_data(filename, data):
+
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, 'a', newline='') as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(['init_lat', 'init_lon', 'init_alt', 'curr_lat', 'curr_lon', 'curr_alt', 'azi_thet', 'elev_thet'])
+        writer.writerow(data)
+
+directory_path = '/home/pi/Documents/Final-Project/data/'
+
+if not os.path.exists(directory_path):
+    os.makedirs(directory_path)
+
+if not os.path.isfile(f'/home/pi/Documents/Final-Project/tracker/data_{date}.csv'):
+
+    csv_data(f'/home/pi/Documents/Final-Project/data/data_{date}.csv', [])
+
+
 
 # def acsData(serial_port, array_size):
 
@@ -150,7 +219,8 @@ def selection(data):
 
             print(arrow_Data)
 
-            # send_data("automatic", [arrow_Data[0], arrow_Data[1]])
+            if ser is not None:
+                send_data("manual", [arrow_Data[0], arrow_Data[1]])
 
     elif data == 'automatic':
         execute = True
@@ -173,12 +243,14 @@ def send_data(mode, data):
         
         data_bytes = struct.pack('2f', *data)
 
-    # ser.write(bytes([mode_byte]) + data_bytes)
-    # ser.flush()
+    ser.write(bytes([mode_byte]) + data_bytes)
+    ser.flush()
 
 def start_automatic_process():
 
     while execute:
+
+        # ser = scanDevice()
 
         global i
         global k
@@ -198,6 +270,7 @@ def start_automatic_process():
         date = str(t.year) + '-' + str(t.month) + '-' + str(t.day)
 
         gps_lat, gps_lon, gps_alt = gps_data()
+        pitc_val, yaw_val = attitude()
 
         if not connect:
             break
@@ -281,25 +354,33 @@ def start_automatic_process():
                 # print(pack_gps)
 
                 if prev_predict_list:
+
                     last_predicted_pos = prev_predict_list[-1]
                     sio.emit('gps_est', [date, last_predicted_pos[0], last_predicted_pos[1], last_predicted_pos[2], 'red'])
                 
-            sio.emit('gps', [date, gps_lat, gps_lon, gps_alt, 'blue'])
             # sio.emit('gps_est', [date, prev_predict[0], prev_predict[1], prev_predict[2], 'red'])
 
             sio.emit('init_pos', init_pos)
-
             
-            # real_gps = [date, gps_lat, gps_lon, gps_alt, 'blue']
-            # sio.emit('gps', real_gps)
-            
-        # angle = velocity(init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt)    
-        # azi_thet = round(angle[0], 2)
-        # elev_thet = round(angle[1], 2)
+            azi_thet = round(yaw_val, 2)
+            elev_thet = round(pitc_val, 2)
 
-        # pack_thet = [azi_thet, elev_thet]
+            # azi_thet = 0
+            # elev_thet = 0
 
-        # print(pack_thet)
+            sio.emit('gps', [date, gps_lat, gps_lon, gps_alt, azi_thet, elev_thet, 'blue'])
+
+            filename = os.path.join(directory_path, f'data_{date}.csv')
+            csv_data(filename, [init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt, azi_thet, elev_thet])
+            print([azi_thet, elev_thet])
+
+            if ser is not None:
+                pass
+
+                send_data("automatic", [azi_thet, elev_thet])
+
+        # print([init_lat, init_lon, init_alt])
+        # print([gps_lat, gps_lon, gps_alt])
 
         # data = acsData('/dev/ttyACM0', 3)
         # acs_1 = round(data[0], 3)
@@ -312,7 +393,7 @@ def start_automatic_process():
         
         # print(acs_data)
 
-        time.sleep(1)
+        # time.sleep(1)
     
     # automatic_process_running = False
 

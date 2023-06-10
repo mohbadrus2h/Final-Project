@@ -1,74 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import '../mode/ArrowButton.css';
 import { Socket } from 'socket.io-client';
 
 const ArrowButton = ({ socket, selectedMode, isConnected }) => {
-  const [aziThet, setaziThet] = useState(0);
-  const [elevThet, setelevThet] = useState(0);
-
-  // console.log(selectedMode)
+  const aziThetRef = useRef(0)
+  const elevThetRef = useRef(180);
 
   const handleUpArrowClick = () => {
-    if (elevThet >= 0) {
-      setelevThet(elevThet + 20);
+    if (elevThetRef.current < 270) {
+      elevThetRef.current += 20;
 
-      console.log([elevThet, elevThet]);
 
-      if (elevThet === 180) {
-        setelevThet(180);
+      if (elevThetRef.current === 260) {
+        elevThetRef.current += 10;
       }
     }
 
+    console.log([aziThetRef.current, elevThetRef.current]);
+
     if (selectedMode === 'manual' && isConnected) {
-      socket.emit('arrowData', [aziThet, elevThet]);
+      socket.emit('arrowData', [aziThetRef.current, elevThetRef.current]);
     }
   };
 
   const handleDownArrowClick = () => {
-    if (elevThet <= 180) {
-      setelevThet(elevThet - 20);
+    if (elevThetRef.current > 180) {
+      elevThetRef.current -= 20;
 
-      console.log([elevThet, elevThet]);
-
-      if (elevThet === 0) {
-        setelevThet(0);
+      if (elevThetRef.current === 190) {
+        elevThetRef.current -= 10;
       }
     }
 
+    console.log([aziThetRef.current, elevThetRef.current]);
+
     if (selectedMode === 'manual' && isConnected) {
-      socket.emit('arrowData', [aziThet, elevThet]);
+      socket.emit('arrowData', [aziThetRef.current, elevThetRef.current]);
     }
   };
 
   const handleRightArrowClick = () => {
-    if (aziThet >= 0) {
-      setaziThet(aziThet + 30);
+    if (aziThetRef.current < 360) {
+      aziThetRef.current += 30;
 
-      console.log([aziThet, aziThet]);
-
-      if (aziThet === 360) {
-        setaziThet(360);
+      
+      // if (aziThetRef === 360) {
+        //   setaziThet(360);
+        // }
       }
-    }
-
+      
+    console.log([aziThetRef.current, elevThetRef.current]);
+      
     if (selectedMode === 'manual' && isConnected) {
-      socket.emit('arrowData', [aziThet, elevThet]);
+      socket.emit('arrowData', [aziThetRef.current, elevThetRef.current]);
     }
   };
 
   const handleLeftArrowClick = () => {
-    if (aziThet <= 360) {
-      setaziThet(aziThet - 30);
+    if (aziThetRef.current > 0) {
+      aziThetRef.current -= 30;
 
-      console.log([aziThet, aziThet]);
-
-      if (aziThet === 0) {
-        setaziThet(0);
-      }
+      // if (aziThet === 0) {
+      //   setaziThet(0);
+      // }
     }
+    
+    console.log([aziThetRef.current, elevThetRef.current]);
 
     if (selectedMode === 'manual' && isConnected) {
-      socket.emit('arrowData', [aziThet, elevThet]);
+      socket.emit('arrowData', [aziThetRef.current, elevThetRef.current]);
     }
   };
 

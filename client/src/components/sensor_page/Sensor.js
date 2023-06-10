@@ -121,6 +121,8 @@ const Sensor = ({ socket }) => {
 
   const gps_point = gpsData[gpsDataIndex] || [];
 
+  // console.log(gps_point[6])
+
   // useEffect(() => {
   //   console.log(curpos);
   // }, [curpos]);
@@ -166,9 +168,9 @@ const Sensor = ({ socket }) => {
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>GEOMETRI</p></div>
           <div className="item-side-col1"><p>roll</p></div>
-          <div className="item-side-col2"><p className='val-color'>{rolVal}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[4]}</p></div>
           <div className="item-side-col1"><p>pitch</p></div>
-          <div className="item-side-col2"><p className='val-color'>{pitchVal}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[5]}</p></div>
         </div>
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>CURRENT (mA)</p></div>

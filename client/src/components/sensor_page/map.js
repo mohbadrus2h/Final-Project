@@ -22,15 +22,13 @@ const Map = ({ gps_buffer, est_buffer }) => {
     if (gps_filteredBuffer.length === 0) return;
 
     const gps_latLngs = gps_buffer.map(point => [point[1], point[2]]);
-    const gps_color = gps_buffer.map(point => point[4]);
+    const gps_color = gps_buffer.map(point => point[6]);
     
     if (est_filteredBuffer.length === 0) return;
     const est_latLngs = est_buffer.map(point => [point[1], point[2]]);
     const est_color = est_buffer.map(point => point[4]);
 
-    // console.log(gps_latLngs)
-
-    console.log(gps_color[0])
+    console.log(gps_buffer)
 
     const gps_polylineOptions = {
       color: gps_color[0],

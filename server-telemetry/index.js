@@ -18,12 +18,20 @@ const server = http.createServer(app)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const port = 4000;
+const hostname = '192.168.100.10';
+
 const io = new Server(server, {
   cors: {
     origin: "*"
   }
 
 })
+
+app.get('/', (req, res) => {
+  
+  res.sendFile(__dirname + '/index.html');
+});
 
 const pool = new Pool({
   user: "postgres",
@@ -38,11 +46,6 @@ pool.connect()
     console.log('Connected to the database');
   })
   .catch(error => console.error('Error connecting to the database:', error));
-
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
 
 const bufferSize = 10;
 let gps_buffer = [];
@@ -181,6 +184,10 @@ function saveBufferToDatabase(buffer) {
   });
 }
 
-server.listen(4000, "0.0.0.0", () => {
+server.listen(port, hostname, () => {
   console.log('listening on *:4000');
-}); 
+});   
+
+// server.listen(4000, "0.0.0.0", () => {
+//   console.log('listening on *:4000');
+// });   

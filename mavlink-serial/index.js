@@ -11,7 +11,7 @@ const REGISTRY = {
     ...common.REGISTRY,
 }
 
-const port = new SerialPort({ path: 'COM6', baudRate: 57600 })
+const port = new SerialPort({ path: 'ttyUSB1', baudRate: 57600 })
 
 const reader = port.pipe(new MavLinkPacketSplitter())
                    .pipe(new MavLinkPacketParser())

@@ -15,9 +15,13 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <div>
+        <h5>Server Running</h5>
+    </div>
     <script>
-        // const socket = io()
-        // socket.on('telemetry-data', console.log)
+        const socket = io()
+        socket.on('gps', console.log)
     </script>
+
 </body>
 </html>
