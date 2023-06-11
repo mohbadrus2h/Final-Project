@@ -1,4 +1,5 @@
 from KalmanFilter3D import KalmanFilter3D
+from serial.tools import list_ports
 from pymavlink import mavutil
 from serial import Serial
 import numpy as np
@@ -12,60 +13,140 @@ import time
 import sys
 import os
 
-ser = None
-
-master = mavutil.mavlink_connection('/dev/ttyUSB1', baud=57600)
-
-# def connectDevice(port):
-#     baudrate = 57600
-#     timeout = 1
-
-#     ser = serial.Serial(port, baudrate, timeout=timeout)
-
-#     return ser
-
-# def scanDevice():
-#     ports = list(serial.tools.list_ports.comports())
-#     for port in ports:
-#         try:
-#             ser = connectDevice(port.device)
-#             print('USB device connected:', port.device)
-#             return ser
-        
-#         except serial.SerialException:
-#             pass
-
-#     return None
-
-try:
-    ser = serial.Serial('/dev/ttyUSB0', 57600)
-    
-except serial.SerialException:
-    print("Error: The specified USB port is not available.")
-
+# sio = socketio.Client(logger=True, engineio_logger=True)
 sio = socketio.Client()
 sio.connect('http://192.168.100.10:4000')
 
-kf = KalmanFilter3D()
+ser = None
+ser_list = []
+connected_devices = {}
+
+# Function to connect to a device given its port
+def connectDevice(port, baudrate):
+    timeout = 1
+    ser = serial.Serial(port, baudrate, timeout=timeout)
+    return ser
+
+def disconnectDevice(port):
+    if port in connected_devices:
+        ser = connected_devices[port]
+        ser.close()
+        del connected_devices[port]
+        print('Disconnected device:', port)
+
+# Function to scan for USB devices and emit the events
+def scanDevices():
+
+    while True:
+        ports = [port.device for port in serial.tools.list_ports.comports()]
+
+        disconnected_devices = list(set(ser_list) - set(ports))
+        
+        for device in disconnected_devices:
+            
+            ser_list.remove(device)
+            disconnectDevice(device)
+            print('USB device plug off :', device)
+
+            sio.emit('usb_device_disconnected', {'port': device})
+
+        for port in ports:
+            if port not in ser_list:
+                    
+                ser_list.append(port)
+                print('New USB device:', port)
+
+                # Emit the event with the new USB device information
+                sio.emit('new_usb_device', {'port': port})
+
+        
+        time.sleep(1)
+
+
+@sio.on('usb_connect')
+def handleUSBConnect(data):
+
+    print(data)
+
+    device_type = data['deviceType']
+    device = data['device']
+    baud_rate = data['baudRate']
+
+    # print(f"Device {device} connected for {device_type} with baud rate {baud_rate}.")
+
+    try:
+        if device_type == 'arduino':
+            
+            ser = connectDevice(device, baud_rate)
+            connected_devices[device] = ser
+            print('Connected to Arduino device:', device)
+
+        elif device_type == 'telemetry':
+            
+            master = mavutil.mavlink_connection(device, baud=baud_rate)
+            connected_devices[device] = master
+            print('Connected to Telemetry device:', device)
+
+        else:
+            print('Unknown device type:', device_type)
+            
+    except serial.SerialException:
+        print('Failed to connect to device:', device)
+#         # sio.emit('usb_connect_error', {'deviceType': device_type, 'device': device})
+
+@sio.event
+def usb_disconnect(data):
+    device_type = data['deviceType']
+    
+    print(data)
+  
+    # if device in connected_devices:
+    #     disconnectDevice(device)
+    #     print('Disconnected device:', device)
+  
+    #     # Emit the success message to the Express server
+    #     sio.emit('usb_disconnect_success', {'deviceType': device_type, 'device': device})
+    # else:
+    #     # Emit an error message to the Express server
+    #     sio.emit('usb_disconnect_error', {'deviceType': device_type, 'device': device})
+
+
+# Start scanning for USB devices
+scanDevices()
 
 @sio.event
 def connect():
-    global connected
-    connected = False
+    emitUSBDevices()
     print('Connected to server')
 
 @sio.event
 def reconnect():
-    global connected
-    connected = True
+    emitUSBDevices()
     print('Reconnected to server')
 
 @sio.event
 def disconnect():
-    global connected
-    connected = False
+    # emitUSBDevices()
     print('Disconnected from server')
-    sys.exit(0)
+
+# Function to emit the list of USB devices
+def emitUSBDevices():
+    # usb_devices = [port.port for port in ser_list]
+    sio.emit('usb_devices', ser_list)
+
+
+# Retrieve the list of connected devices from the server upon reconnection
+@sio.event
+def connect():
+    emitUSBDevices()
+    print('Connected to server')
+
+# Emit the list of connected devices on initial connection
+
+
+emitUSBDevices()
+
+kf = KalmanFilter3D()
 
 t = datetime.datetime.now()
 date = str(t.year) + '-' + str(t.month) + '-' + str(t.day)
@@ -95,15 +176,15 @@ with open(file_input, 'r') as gps_file:
         coords.append([lat, lon, alt])
         # coord_time.append([tim])
 
-def gps_data():
+# def gps_data():
 
-    msg = master.recv_match(type='GPS_RAW_INT', blocking=True)
+#     msg = master.recv_match(type='GPS_RAW_INT', blocking=True)
 
-    gps_lat = msg.lat * 1e-7
-    gps_lon = msg.lon * 1e-7
-    gps_alt = msg.alt * 1e-3
+#     gps_lat = msg.lat * 1e-7
+#     gps_lon = msg.lon * 1e-7
+#     gps_alt = msg.alt * 1e-3
 
-    return [gps_lat, gps_lon, gps_alt]
+#     return [gps_lat, gps_lon, gps_alt]
 
     # global g
 
@@ -114,20 +195,20 @@ def gps_data():
 
     # return gps_msg
 
-def attitude():
+# def attitude():
 
-    att_msg = master.recv_match(type='ATTITUDE', blocking=True)
+#     att_msg = master.recv_match(type='ATTITUDE', blocking=True)
 
-    pitch_deg = math.degrees(att_msg.pitch)
-    yaw_deg = math.degrees(att_msg.yaw)
+#     pitch_deg = math.degrees(att_msg.pitch)
+#     yaw_deg = math.degrees(att_msg.yaw)
 
-    if yaw_deg < 0:
-        yaw_deg = 360 + yaw_deg
+#     if yaw_deg < 0:
+#         yaw_deg = 360 + yaw_deg
 
-    if pitch_deg < 0:
-        pitch_deg = 0;
+#     if pitch_deg < 0:
+#         pitch_deg = 0;
 
-    return [pitch_deg, yaw_deg]
+#     return [pitch_deg, yaw_deg]
 
 # def velocity(prev_lat, prev_lon, prev_alt, curr_lat, curr_lon, curr_alt):
    
@@ -243,8 +324,8 @@ def send_data(mode, data):
         
         data_bytes = struct.pack('2f', *data)
 
-    ser.write(bytes([mode_byte]) + data_bytes)
-    ser.flush()
+    # ser.write(bytes([mode_byte]) + data_bytes)
+    # ser.flush()
 
 def start_automatic_process():
 
@@ -374,10 +455,10 @@ def start_automatic_process():
             csv_data(filename, [init_lat, init_lon, init_alt, curr_lat, curr_lon, curr_alt, azi_thet, elev_thet])
             print([azi_thet, elev_thet])
 
-            if ser is not None:
-                pass
+            # if ser is not None:
+            #     pass
 
-                send_data("automatic", [azi_thet, elev_thet])
+            #     send_data("automatic", [azi_thet, elev_thet])
 
         # print([init_lat, init_lon, init_alt])
         # print([gps_lat, gps_lon, gps_alt])

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DropdownList from '../mode/DropdownList';
-import ArrowButton from '../mode/ArrowButton'
+import ArrowButton from '../mode/ArrowButton';
+import USBconnection from '../mode/USBconnection';
 import Map from './map';
 
 import './Sensor.css';
@@ -162,6 +163,9 @@ const Sensor = ({ socket }) => {
           <div className="gridChild-item-1  gridchild-title"><DropdownList socket={socket} onModeChange={handleModeChange}/></div>
         </div>
           <button onClick={handleButtonClick}>Database</button>
+          <div className='gridChild-item-1'>
+            <USBconnection socket={socket}/>
+          </div>
         <ArrowButton socket={socket} selectedMode={selectedMode} isConnected={isConnected}/>
       </div>
       <div className="grid-item-3">

@@ -1,41 +1,49 @@
-import serial
+from KalmanFilter3D import KalmanFilter3D
+from pymavlink import mavutil
+from serial.tools import list_ports
+import serial  # Import the serial module
+import numpy as np
+import socketio
+import struct
+import math
+import csv
+import datetime
 import time
-import serial.tools.list_ports
+import sys
+import os
 
-# Create a function to establish a serial connection to a USB device
-def connect_to_usb_device(port):
-    baudrate = 9600  # Replace with the appropriate baud rate for your device
-    timeout = 1  # Specify the desired timeout value
+ser_list = []  # List to store connected USB devices
 
-    # Open the serial connection
+# master = mavutil.mavlink_connection('/dev/ttyUSB1', baud=57600)
+
+def connectDevice(port):
+    baudrate = 57600
+    timeout = 1
+
     ser = serial.Serial(port, baudrate, timeout=timeout)
-
-    # Perform any necessary communication with the device
-    # For example, you can send commands or receive data
-
-    # Return the serial connection
     return ser
 
-# Find all available USB devices and connect to them
-def find_and_connect_usb_devices():
-    ports = list(serial.tools.list_ports.comports())
-    connections = []
+def scanDevices():
+    ports = list_ports.comports()
+    ser_list = []
 
     for port in ports:
         try:
-            ser = connect_to_usb_device(port.device)
+            ser = connectDevice(port.device)
+            ser_list.append(ser)
             print('USB device connected:', port.device)
-            connections.append(ser)
         except serial.SerialException:
             pass
 
-    return connections
+    return ser_list
 
-# Keep checking for USB devices and connect when found
-while True:
-    connections = find_and_connect_usb_devices()
-    if connections:
-        # Use the 'connections' list to communicate with the USB devices as needed
-        break
+try:
+    ser_list = scanDevices()
+    if not ser_list:
+        print("Error: No USB devices found.")
+        sys.exit(0)
+except serial.SerialException:
+    print("Error: The specified USB port is not available.")
+    sys.exit(0)
 
-    time.sleep(1)
+# Rest of the code...
