@@ -31,7 +31,7 @@
     grid-column-end: 3;
     /* grid-row: 1/-1; */
     grid-row: 1;
-    grid-template-rows: 1fr 4fr 6fr;
+    grid-template-rows: 1fr 1fr 1fr 4fr;
     grid-gap: 10px;
     /* background-color:#001a33; */
     padding: 0px 0px 0px 5px;

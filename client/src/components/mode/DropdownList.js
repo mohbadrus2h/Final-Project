@@ -10,41 +10,28 @@ const DropdownList = ({ socket, onModeChange }) => {
   const handleModeChange = (event) => {
     const selectedMode = event.target.value;
     setSelected(selectedMode);
-
-    if (selectedMode === 'manual') {
-      activateArrowButtons();
-    } else {
-      disableArrowButtons();
+    
+    if (clickState) {
+      onModeChange(selectedMode);
     }
   };
-
-  const activateArrowButtons = () => {
-    setClickState(true);
-    setReconnectState(false);
-  };
-
-  const disableArrowButtons = () => {
-    setClickState(false);
-  };
-
   const handleConnectClick = () => {
     if (selected !== '') {
       if (clickState && !reconnectState) {
         socket.emit('selection', 'disconnected');
         setClickState(false);
-        disableArrowButtons();
+
       } else {
         socket.emit('selection', selected);
         setClickState(true);
         setReconnectState(false);
-        if (selected === 'manual') {
-          activateArrowButtons();
-        }
+        onModeChange(selected);
       }
     }
   };
 
   useEffect(() => {
+
     socket.on('disconnect', () => {
       setReconnectState(false);
       setIsConnected(false); // Update connection status on disconnect

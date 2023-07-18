@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DropdownList from '../mode/DropdownList';
-import ArrowButton from '../mode/ArrowButton'
+import ArrowButton from '../mode/ArrowButton';
+import USBconnection from '../mode/USBconnection';
 import Map from './map';
 
 import './Sensor.css';
@@ -11,6 +12,7 @@ const Sensor = ({ socket }) => {
   // const [curpos, setCurpos] = useState([]);
   const navigate = useNavigate();
   const [initpoint, setInitpoint] = useState([])
+  const [acsval, setAcsval] = useState([])
 
   const [rolVal, setrolVal] = useState(0);
   const [pitchVal, setpitchVal] = useState(0);
@@ -25,8 +27,11 @@ const Sensor = ({ socket }) => {
   const [latVal, setlatVal] = useState(0)
   const [altVal, setaltVal] = useState(0)
 
-  const [data, setData] = useState([]);
-  const [dataIndex, setDataIndex] = useState(0);
+  const [gpsData, setGPSData] = useState([]);
+  const [estData, setESTData] = useState([]);
+  const [gpsDataIndex, setGPSDataIndex] = useState(0);
+  const [estDataIndex, setESTDataIndex] = useState(0);
+
   const [bufferTimestamp, setBufferTimestamp] = useState(null);
   const [buttonPressed, setButtonPressed] = useState(false);
 
@@ -38,14 +43,21 @@ const Sensor = ({ socket }) => {
     navigate('/search-data');
   };
 
+  // console.log(selectedMode)
+
   const handleModeChange = (mode) => {
     setSelectedMode(mode);
-    // console.log(mode)
+    console.log(mode)
   };
 
   socket.on('init_pos', (initpos) => {
     setInitpoint(initpos)
     // console.log(initpos)
+  })
+
+  socket.on('acs', (acs_data) => {
+    // console.log(acs_data)
+    setAcsval(acs_data)
   })
 
   // console.log(isConnected)
@@ -62,36 +74,55 @@ const Sensor = ({ socket }) => {
       setIsConnected(false);
     };
 
-    const handleBuffer = (buffer) => {
-      setData(buffer);
+    const handleGPSBuffer = (buffer) => {
+      setGPSData(buffer);
+    };
+
+    const handleESTBuffer = (buffer) => {
+      setESTData(buffer);
     };
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
 
-    socket.on('buffer', handleBuffer);
+    socket.on('gps', handleGPSBuffer);
+    socket.on('gps_est', handleESTBuffer);
 
     return () => {
 
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect)
 
-      socket.off('buffer', handleBuffer);
+      socket.off('gps', handleGPSBuffer);
+      socket.off('gps_est', handleESTBuffer);
     };
   }, [socket]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (data.length > 0) {
-        setDataIndex((prevIndex) => (prevIndex + 1) % data.length);
+      if (gpsData.length > 0) {
+        setGPSDataIndex((prevIndex) => (prevIndex + 1) % gpsData.length);
         // console.log(data);
       }
     }, 1000);
   
     return () => clearTimeout(timeout);
-  }, [dataIndex, data]);
+  }, [gpsDataIndex, gpsData]);
 
-  const curpos = data[dataIndex] || [];
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (estData.length > 0) {
+        setESTDataIndex((prevIndex) => (prevIndex + 1) % estData.length);
+        // console.log(data);
+      }
+    }, 1000);
+  
+    return () => clearTimeout(timeout);
+  }, [estDataIndex, estData]);
+
+  const gps_point = gpsData[gpsDataIndex] || [];
+
+  // console.log(gps_point[6])
 
   // useEffect(() => {
   //   console.log(curpos);
@@ -125,31 +156,34 @@ const Sensor = ({ socket }) => {
   return (
     <div className="grid-container background-image">
       {/* <div className="grid-item-1"><Map socket={socket} buffer={data}/></div> */}
-      <div className="grid-item-1"><Map buffer={data}/></div>
+      <div className="grid-item-1"><Map gps_buffer={gpsData} est_buffer={estData}/></div>
       <div className="grid-item-1"></div>
       <div className="grid-item-2">
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><DropdownList socket={socket} onModeChange={handleModeChange}/></div>
         </div>
           <button onClick={handleButtonClick}>Database</button>
+          <div className='gridChild-item-1'>
+            <USBconnection socket={socket}/>
+          </div>
         <ArrowButton socket={socket} selectedMode={selectedMode} isConnected={isConnected}/>
       </div>
       <div className="grid-item-3">
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>GEOMETRI</p></div>
           <div className="item-side-col1"><p>roll</p></div>
-          <div className="item-side-col2"><p className='val-color'>{rolVal}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[4]}</p></div>
           <div className="item-side-col1"><p>pitch</p></div>
-          <div className="item-side-col2"><p className='val-color'>{pitchVal}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[5]}</p></div>
         </div>
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>CURRENT (mA)</p></div>
           <div className="item-side-col1"><p>supply</p></div>
-          <div className="item-side-col2"><p className='val-color'>{voltVal_1}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{acsval[0]}</p></div>
           <div className="item-side-col1"><p>motor 1</p></div>
-          <div className="item-side-col2"><p className='val-color'>{currVal_1}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{acsval[1]}</p></div>
           <div className="item-side-col1"><p>motor 2</p></div>
-          <div className="item-side-col2"><p className='val-color'>{currVal_1}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{acsval[2]}</p></div>
         </div>
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>ANTENA TRACKER</p></div>
@@ -163,11 +197,11 @@ const Sensor = ({ socket }) => {
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1 gridchild-title"><p>PAYLOAD</p></div>
           <div className="item-side-col1"><p>longitude</p></div>
-          <div className="item-side-col2"><p className='val-color'>{curpos[1]}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[1]}</p></div>
           <div className="item-side-col1"><p>latitude</p></div>
-          <div className="item-side-col2"><p className='val-color'>{curpos[2]}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[2]}</p></div>
           <div className="item-side-col1"><p>altitude</p></div>
-          <div className="item-side-col2"><p className='val-color'>{curpos[3]}</p></div>
+          <div className="item-side-col2"><p className='val-color'>{gps_point[3]}</p></div>
         </div>
       </div>
     </div>

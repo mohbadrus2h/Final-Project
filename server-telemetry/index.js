@@ -18,12 +18,20 @@ const server = http.createServer(app)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const port = 4000;
+const hostname = '192.168.100.10';
+
 const io = new Server(server, {
   cors: {
     origin: "*"
   }
 
 })
+
+app.get('/', (req, res) => {
+  
+  res.sendFile(__dirname + '/index.html');
+});
 
 const pool = new Pool({
   user: "postgres",
@@ -39,17 +47,67 @@ pool.connect()
   })
   .catch(error => console.error('Error connecting to the database:', error));
 
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
-
 const bufferSize = 10;
-let buffer = [];
+let gps_buffer = [];
+let est_buffer = [];
+let usbDevices = [];
+const connectedDevices = {};
 
 io.on('connect', (socket) => {
 
   console.log('Client connected');
+
+  // socket.on('connect', () => {
+  //   socket.emit('usb_devices', usbDevices);
+  // });
+
+  // console.log(usbDevices);
+
+  socket.on('usb_devices', (usbDevices) => {
+    socket.emit('usb_devices', usbDevices);
+    console.log(usbDevices)
+  });
+
+  socket.on('new_usb_device', (data) => {
+    const { port } = data;
+
+    usbDevices.push(port);
+
+    io.emit('usb_devices', usbDevices);
+
+    console.log('New USB device connected:', port);
+  });
+
+  socket.on('usb_device_disconnected', (data) => {
+    const { port } = data;
+
+    // Remove the disconnected USB device from the list
+    usbDevices = usbDevices.filter((device) => device !== port);
+
+    // Broadcast the updated list of USB devices to all clients
+    io.emit('usb_devices', usbDevices);
+
+    console.log(usbDevices)
+  })
+
+  socket.on('connect_usb', ({ deviceType, device, baudRate }) => {
+
+    console.log({ deviceType, device, baudRate })
+    console.log(`Device ${device} connected for ${deviceType} with baud rate ${baudRate}.`);
+
+    // Emit the connect event to Python script
+    console.log('Emitting usb_connect event:', { deviceType, device, baudRate });
+    io.emit('usb_connect', { deviceType, device, baudRate });
+  });
+
+  // Emit disconnect event to Python script
+  socket.on('disconnect_usb', ({ deviceType }) => {
+    console.log(`Device disconnected for ${deviceType}.`);
+
+    // Emit the disconnect event to Python script
+    io.emit('usb_disconnect', { deviceType });
+  });
+
   
   socket.on('selection', (selection) => {
     console.log('msg:', selection);
@@ -64,24 +122,44 @@ io.on('connect', (socket) => {
 
   socket.on('init_pos', (initpos) => {
     
-    console.log(initpos)
+    // console.log(initpos)
     io.emit('init_pos', initpos)
 
   })
 
   socket.on('gps', (data) => {
 
-    buffer.push(data);
+    gps_buffer.push(data);
 
-    if (buffer.length >= bufferSize) {
+    if (gps_buffer.length >= bufferSize) {
       
-      // console.log(filteredData);
+      console.log(gps_buffer);
       // saveBufferToDatabase(buffer)
-      io.emit('buffer', buffer)
+      io.emit('gps', gps_buffer)
 
-      buffer = []
+      gps_buffer = []
     }
   });
+
+  socket.on('gps_est', (data) => {
+
+    est_buffer.push(data);
+
+    if (est_buffer.length >= bufferSize) {
+      
+      console.log(est_buffer);
+      // saveBufferToDatabase(buffer)
+      io.emit('gps_est', est_buffer)
+
+      est_buffer = []
+    }
+  });
+
+  socket.on('acs', (acs_data) => {
+
+    console.log(acs_data)
+    io.emit('acs', acs_data)
+  })
 
   socket.on('arrowData', (arrow_Data) => { 
     io.emit('arrowData', arrow_Data)
@@ -160,6 +238,10 @@ function saveBufferToDatabase(buffer) {
   });
 }
 
-server.listen(4000, "0.0.0.0", () => {
+server.listen(port, hostname, () => {
   console.log('listening on *:4000');
-}); 
+});   
+
+// server.listen(4000, "0.0.0.0", () => {
+//   console.log('listening on *:4000');
+// });   
