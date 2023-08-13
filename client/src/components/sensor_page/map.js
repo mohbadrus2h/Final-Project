@@ -7,6 +7,9 @@ const Map = ({ gps_buffer, est_buffer }) => {
   const gps_polylineRef = useRef(null);
   const est_polylineRef = useRef(null);
 
+  // console.log(gps_buffer)
+  // console.log(est_buffer)
+
   useEffect(() => {
 
     if (!gps_buffer || gps_buffer.length === 0) return;
@@ -21,14 +24,12 @@ const Map = ({ gps_buffer, est_buffer }) => {
 
     if (gps_filteredBuffer.length === 0) return;
 
-    const gps_latLngs = gps_buffer.map(point => [point[1], point[2]]);
-    const gps_color = gps_buffer.map(point => point[6]);
+    const gps_latLngs = gps_buffer.map(point => [point[0], point[1]]);
+    const gps_color = gps_buffer.map(point => point[3]);
     
     if (est_filteredBuffer.length === 0) return;
-    const est_latLngs = est_buffer.map(point => [point[1], point[2]]);
-    const est_color = est_buffer.map(point => point[4]);
-
-    console.log(gps_buffer)
+    const est_latLngs = est_buffer.map(point => [point[0], point[1]]);
+    const est_color = est_buffer.map(point => point[3]);
 
     const gps_polylineOptions = {
       color: gps_color[0],

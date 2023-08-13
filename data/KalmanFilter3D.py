@@ -2,19 +2,25 @@ import numpy as np
 
 class KalmanFilter3D:
     def __init__(self):
+        #delta time
         self.dt = 1.0
+        #state transition matrix
         self.A = np.array([[1, 0, 0, self.dt, 0, 0],
                            [0, 1, 0, 0, self.dt, 0],
                            [0, 0, 1, 0, 0, self.dt],
                            [0, 0, 0, 1, 0, 0],
                            [0, 0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 0, 1]])
+        #measurement matrix
         self.H = np.array([[1, 0, 0, 0, 0, 0],
                            [0, 1, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0]])
         self.Q = np.eye(6) * 0.000000001
+        #covariance matrix
         self.R = np.eye(3) * 0.00000001
+        #state matrix
         self.x = np.zeros((6, 1))
+        #state covariance matrix
         self.P = np.eye(6)
 
     def predict(self):

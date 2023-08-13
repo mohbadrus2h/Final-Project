@@ -38,6 +38,9 @@ const Sensor = ({ socket }) => {
   const [selectedMode, setSelectedMode] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
+  const [inittime, setInittime] = useState(null);
+  const [currentTime, setCurrentTime] = useState('');
+
   const handleButtonClick = () => {
     setButtonPressed(true);
     navigate('/search-data');
@@ -47,12 +50,40 @@ const Sensor = ({ socket }) => {
 
   const handleModeChange = (mode) => {
     setSelectedMode(mode);
-    console.log(mode)
+    // console.log(mode)
   };
 
   socket.on('init_pos', (initpos) => {
     setInitpoint(initpos)
-    // console.log(initpos)
+    console.log(initpos)
+
+    // const currentDateTime = new Date();
+    //   const currentHours = currentDateTime.getHours().toString().padStart(2, '0');
+    //   const currentMinutes = currentDateTime.getMinutes().toString().padStart(2, '0');
+    //   const currentSeconds = currentDateTime.getSeconds().toString().padStart(2, '0');
+    //   const currentMilliseconds = currentDateTime.getMilliseconds().toString().padStart(3, '0');
+
+    //   // Membuat string waktu dengan format HH:mm:ss.SSS
+    //   const currentTimeString = `time (${currentSeconds}.${currentMilliseconds})`;
+
+
+
+    
+    // setCurrentTime(currentTimeString);
+
+    // console.log(currentDateTime);
+
+  })
+
+  socket.on('time', (time) => {
+    // const trimmedString = time.slice(0, -5);
+    // setCurrentTime(time+0.0083)
+
+    // console.log(trimmedString)
+    const result = (parseFloat(time) + 0.009).toFixed(3);
+    
+    console.log(`website time(s): ${result}`);
+
   })
 
   socket.on('acs', (acs_data) => {
@@ -61,7 +92,6 @@ const Sensor = ({ socket }) => {
   })
 
   // console.log(isConnected)
-// 
   // console.log(selectedMode)
 
   useEffect(() => {
