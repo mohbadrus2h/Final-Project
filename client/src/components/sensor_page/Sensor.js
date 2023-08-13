@@ -171,12 +171,12 @@ const Sensor = ({ socket }) => {
       <div className="grid-item-3">
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>GEOMETRI</p></div>
-          <div className="item-side-col1"><p>roll</p></div>
+          <div className="item-side-col1"><p>yaw</p></div>
           <div className="item-side-col2"><p className='val-color'>{gps_point[4]}</p></div>
           <div className="item-side-col1"><p>pitch</p></div>
           <div className="item-side-col2"><p className='val-color'>{gps_point[5]}</p></div>
         </div>
-        <div className="gridChild-item-Side">
+        {/* <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>CURRENT (mA)</p></div>
           <div className="item-side-col1"><p>supply</p></div>
           <div className="item-side-col2"><p className='val-color'>{acsval[0]}</p></div>
@@ -184,7 +184,7 @@ const Sensor = ({ socket }) => {
           <div className="item-side-col2"><p className='val-color'>{acsval[1]}</p></div>
           <div className="item-side-col1"><p>motor 2</p></div>
           <div className="item-side-col2"><p className='val-color'>{acsval[2]}</p></div>
-        </div>
+        </div> */}
         <div className="gridChild-item-Side">
           <div className="gridChild-item-1  gridchild-title"><p>ANTENA TRACKER</p></div>
           <div className="item-side-col1"><p>longitude</p></div>

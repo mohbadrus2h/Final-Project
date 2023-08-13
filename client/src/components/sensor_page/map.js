@@ -46,6 +46,30 @@ const Map = ({ gps_buffer, est_buffer }) => {
     map.fitBounds(gps_polylineRef.current.getBounds());
     map.fitBounds(est_polylineRef.current.getBounds());
 
+    const addLegendToMap = (map) => {
+      const legendControl = L.control({ position: 'topright' });
+
+      legendControl.onAdd = () => {
+        const legendDiv = L.DomUtil.create('div', 'legend');
+        const legendContent = `
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: ${gps_color[0]}"></div>
+            <div class="legend-label">GPS Buffer</div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: ${est_color[0]}"></div>
+            <div class="legend-label">Estimation Buffer</div>
+          </div>
+        `;
+        legendDiv.innerHTML = legendContent;
+        return legendDiv;
+      };
+
+      legendControl.addTo(map);
+    };
+
+    addLegendToMap(map);
+
     return () => {
       map.remove();
     };

@@ -57,12 +57,6 @@ io.on('connect', (socket) => {
 
   console.log('Client connected');
 
-  // socket.on('connect', () => {
-  //   socket.emit('usb_devices', usbDevices);
-  // });
-
-  // console.log(usbDevices);
-
   socket.on('usb_devices', (usbDevices) => {
     socket.emit('usb_devices', usbDevices);
     console.log(usbDevices)
@@ -81,10 +75,8 @@ io.on('connect', (socket) => {
   socket.on('usb_device_disconnected', (data) => {
     const { port } = data;
 
-    // Remove the disconnected USB device from the list
     usbDevices = usbDevices.filter((device) => device !== port);
 
-    // Broadcast the updated list of USB devices to all clients
     io.emit('usb_devices', usbDevices);
 
     console.log(usbDevices)
@@ -94,23 +86,23 @@ io.on('connect', (socket) => {
 
     console.log({ deviceType, device, baudRate })
     console.log(`Device ${device} connected for ${deviceType} with baud rate ${baudRate}.`);
-
-    // Emit the connect event to Python script
     console.log('Emitting usb_connect event:', { deviceType, device, baudRate });
+
     io.emit('usb_connect', { deviceType, device, baudRate });
   });
 
-  // Emit disconnect event to Python script
   socket.on('disconnect_usb', ({ deviceType }) => {
+
     console.log(`Device disconnected for ${deviceType}.`);
 
-    // Emit the disconnect event to Python script
     io.emit('usb_disconnect', { deviceType });
   });
 
   
   socket.on('selection', (selection) => {
+
     console.log('msg:', selection);
+
     if (socket.connected) {
       io.emit('selection', selection);
     }
@@ -122,7 +114,6 @@ io.on('connect', (socket) => {
 
   socket.on('init_pos', (initpos) => {
     
-    // console.log(initpos)
     io.emit('init_pos', initpos)
 
   })
@@ -134,9 +125,8 @@ io.on('connect', (socket) => {
     if (gps_buffer.length >= bufferSize) {
       
       console.log(gps_buffer);
-      // saveBufferToDatabase(buffer)
+  
       io.emit('gps', gps_buffer)
-
       gps_buffer = []
     }
   });
