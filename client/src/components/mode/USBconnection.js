@@ -30,17 +30,17 @@ const USBconnection = ({ socket }) => {
 
     setDeviceType(newDeviceType);
 
+
+    const selectedDevice = selectedDeviceRef.current.value;
+    const baudRate = Number(baudRateRef.current.value);
+
     if (isConnected) {
-      
-      const selectedDevice = selectedDeviceRef.current.value;
-      const baudRate = Number(baudRateRef.current.value);
 
       // Emit the selected device and baud rate to the server
       socket.emit('connect_usb', { deviceType: newDeviceType, device: selectedDevice, baudRate });
     } else {
       
-
-      socket.emit('disconnect_usb', { deviceType: newDeviceType });
+      socket.emit('disconnect_usb', { device: selectedDevice});
     }
   };
 
@@ -58,7 +58,10 @@ const USBconnection = ({ socket }) => {
           <select
             id="deviceSelect1"
             ref={selectedDevice1Ref}
-            onChange={(e) => selectedDevice1Ref(e.target.value)}
+            onChange={(e) => {
+              const selectedDevice = selectedDevice1Ref.current.value;
+              // selectedDevice1Ref.current = selectedDevice;
+            }}
           >
             {deviceNames.map((deviceName) => (
               <option key={deviceName} value={deviceName}>{deviceName}</option>
@@ -93,7 +96,10 @@ const USBconnection = ({ socket }) => {
           <select
             id="deviceSelect2"
             ref={selectedDevice2Ref}
-            onChange={(e) => selectedDevice2Ref(e.target.value)}
+            onChange={() => {
+              const selectedDevice = selectedDevice2Ref.current.value;
+              // selectedDevice2Ref.current = selectedDevice;
+            }}
           >
             {deviceNames.map((deviceName) => (
               <option key={deviceName} value={deviceName}>{deviceName}</option>
